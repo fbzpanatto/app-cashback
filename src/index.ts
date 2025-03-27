@@ -59,7 +59,7 @@ async function initializeWhatsAppClient() {
 
   whatsappClient = new Client({
     authStrategy: new RemoteAuth({
-      clientId: "whatsapp-client",
+      clientId: "id25",
       store: store,
       backupSyncIntervalMs: 300000
     }),
