@@ -2,9 +2,22 @@ import { WhatsappRouter } from "./controllers/whatsapp";
 import { SaleRouter } from "./controllers/sale";
 import { ParameterRouter } from "./controllers/parameter";
 
-process.env.WA_WEBJS_AUTH_DIR = '/tmp'
-
 if (process.env.NODE_ENV !== 'production') require('dotenv').config();
+
+if (process.env.NODE_ENV !== 'production') {
+  process.on('beforeExit', () => {
+    const pathsToClean = [
+      path.join(__dirname, '../.wwebjs_auth'),
+      path.join(__dirname, '../.wwebjs_cache')
+    ];
+
+    pathsToClean.forEach(p => {
+      if (fs.existsSync(p)) {
+        fs.rmSync(p, { recursive: true, force: true });
+      }
+    });
+  });
+}
 
 import { Client, RemoteAuth } from 'whatsapp-web.js';
 import { MongoStore } from 'wwebjs-mongo';
@@ -13,6 +26,8 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import http from 'http';
 import mongoose from 'mongoose';
+import * as fs from "node:fs";
+import path from "node:path";
 
 // Configurações
 const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://fbzpanatto:fnp181292@cluster0.1quv5d8.mongodb.net/whatsapp?retryWrites=true&w=majority&appName=Cluster0";
@@ -57,20 +72,28 @@ export let whatsappClient: Client | null = null;
 
 async function initializeWhatsAppClient() {
 
-  const store = new MongoStore({ mongoose: mongoose }),
+  const store = new MongoStore(
+    {
+      mongoose: mongoose,
+      preKeyCollection: 'wwebjs_pre_keys',
+      sessionCollection: 'wwebjs_sessions'
+    }
+  ),
 
   whatsappClient = new Client({
     authStrategy: new RemoteAuth({
       clientId: "whatsapp-client",
       store: store,
-      backupSyncIntervalMs: 300000
+      backupSyncIntervalMs: 300000,
+      dataPath: undefined
     }),
     puppeteer: {
       headless: true,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage"
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas"
       ],
       timeout: 60000
     }
@@ -133,4 +156,12 @@ process.on('SIGINT', async () => {
   await mongoose.disconnect();
   server.close();
   process.exit(0);
+});
+
+process.on('beforeExit', () => {
+  [path.join(__dirname, '../.wwebjs_auth'), path.join(__dirname, '../.wwebjs_cache')].forEach(path => {
+    if (fs.existsSync(path)) {
+      fs.rmSync(path, { recursive: true, force: true });
+    }
+  });
 });
