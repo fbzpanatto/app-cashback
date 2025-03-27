@@ -13,7 +13,7 @@ import http from 'http';
 import mongoose from 'mongoose';
 
 // Configurações
-const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://fbzpanatto:fnp181292@cluster0.1quv5d8.mongodb.net/whatsapp?retryWrites=true&w=majority&appName=Cluster0";
+const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://fbzpanatto:fnp181292@cluster0.1quv5d8.mongodb.net/whatsappConnections?retryWrites=true&w=majority&appName=Cluster0";
 const PORT = process.env.PORT || 3000;
 
 // Inicializações
