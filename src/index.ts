@@ -25,10 +25,7 @@ const corsOptions: cors.CorsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE']
 }
 
-const corsOptionsTwo = { origin: "*", credentials: true, optionsSuccessStatus: 200 }
-
-// app.use(cors(corsOptions));
-app.use(cors(corsOptionsTwo) );
+app.use(cors(corsOptions) );
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -39,7 +36,7 @@ app.use(route)
 
 const server = http.createServer(app)
 const io = new Server(server, {
-  cors: corsOptionsTwo,
+  cors: corsOptions,
   connectionStateRecovery: {
     maxDisconnectionDuration: 2 * 60 * 1000 // 2 minutos
   }
