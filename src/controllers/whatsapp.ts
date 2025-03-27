@@ -1,5 +1,5 @@
 import { Router, Request } from "express";
-import { client } from "../index";
+import { whatsappClient } from "../index";
 
 export const WhatsappRouter = Router();
 
@@ -28,7 +28,7 @@ WhatsappRouter.post('/send-message', async (req: Request, res: any) => {
     // Adiciona sufixo "@c.us" exigido pelo WhatsApp Web.js
     const chatId = `${phone}@c.us`;
 
-    await client.sendMessage(chatId, message);
+    await whatsappClient?.sendMessage(chatId, message);
 
     res.status(201).json({ success: true, message: 'Mensagem enviada com sucesso!' });
   }
