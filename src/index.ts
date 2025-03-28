@@ -16,9 +16,7 @@ const app: Application = express();
 const server = http.createServer(app);
 
 const corsOptions = {
-  origin: 'http://appfrontcashback.s3-website-us-east-1.amazonaws.com',
-  credentials: true,
-  optionsSuccessStatus: 200
+  origin: '*'
 }
 
 app.use(cors(corsOptions));
