@@ -15,7 +15,11 @@ const PORT = 3000;
 const app: Application = express();
 const server = http.createServer(app);
 
-const corsOptions = { origin: "*", credentials: true, optionsSuccessStatus: 200 }
+const corsOptions = {
+  origin: 'http://appfrontcashback.s3-website-us-east-1.amazonaws.com',
+  credentials: true,
+  optionsSuccessStatus: 200
+}
 
 app.use(cors(corsOptions));
 app.use(express.json());
