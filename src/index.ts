@@ -2,8 +2,6 @@ import { WhatsappRouter } from "./controllers/whatsapp";
 import { SaleRouter } from "./controllers/sale";
 import { ParameterRouter } from "./controllers/parameter";
 
-// if (process.env.NODE_ENV !== 'production') require('dotenv').config();
-
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import { Server } from 'socket.io';
 import express, { Application } from 'express';
@@ -12,7 +10,7 @@ import http from 'http';
 import mongoose from 'mongoose';
 import path from "node:path";
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 const app: Application = express();
 const server = http.createServer(app);
