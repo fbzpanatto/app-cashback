@@ -2,6 +2,8 @@ import { WhatsappRouter } from "./controllers/whatsapp";
 import { SaleRouter } from "./controllers/sale";
 import { ParameterRouter } from "./controllers/parameter";
 
+require("dotenv").config();
+
 import { Client, LocalAuth } from 'whatsapp-web.js';
 import { Server } from 'socket.io';
 import express, { Application } from 'express';
