@@ -15,14 +15,7 @@ const PORT = 3000;
 const app: Application = express();
 const server = http.createServer(app);
 
-const corsOptions: cors.CorsOptions = {
-  credentials: true,
-  origin: [
-    'https://cashback-front.up.railway.app',
-    'http://localhost:4200'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE']
-};
+const corsOptions = { origin: "*", credentials: true, optionsSuccessStatus: 200 }
 
 app.use(cors(corsOptions));
 app.use(express.json());
