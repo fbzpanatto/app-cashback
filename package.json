@@ -4,9 +4,9 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "npx nodemon src/index.ts --watch 'src/' -e ts",
+    "start": "NODE_ENV=production npx nodemon src/index.ts --watch 'src/' -e ts",
     "build": "npx tsc",
-    "start": "node dist/index.js"
+    "dev": "node dist/index.js"
   },
   "keywords": [],
   "author": "",
