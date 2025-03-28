@@ -2,25 +2,21 @@ import { WhatsappRouter } from "./controllers/whatsapp";
 import { SaleRouter } from "./controllers/sale";
 import { ParameterRouter } from "./controllers/parameter";
 
-if (process.env.NODE_ENV !== 'production') require('dotenv').config();
+// if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 
-import { Client, RemoteAuth } from 'whatsapp-web.js';
-import { MongoStore } from 'wwebjs-mongo';
+import { Client, LocalAuth } from 'whatsapp-web.js';
 import { Server } from 'socket.io';
 import express, { Application } from 'express';
 import cors from 'cors';
 import http from 'http';
 import mongoose from 'mongoose';
+import path from "node:path";
 
-// Configurações
-const MONGO_URI = process.env.MONGODB_URI || "mongodb+srv://fbzpanatto:fnp181292@cluster0.1quv5d8.mongodb.net/whatsappConnections?retryWrites=true&w=majority&appName=Cluster0";
 const PORT = process.env.PORT || 3000;
 
-// Inicializações
 const app: Application = express();
 const server = http.createServer(app);
 
-// Configuração CORS
 const corsOptions: cors.CorsOptions = {
   credentials: true,
   origin: [
@@ -42,33 +38,22 @@ const io = new Server(server, {
   }
 });
 
-// Conexão MongoDB
-mongoose.connect(MONGO_URI)
-  .then(async () => {
-    console.log('✅ Conectado ao MongoDB');
-    await initializeWhatsAppClient()
-  })
-  .catch(err => console.error('❌ Erro MongoDB:', err));
-
 // WhatsApp Client
 export let whatsappClient: Client | null = null;
 
 async function initializeWhatsAppClient() {
 
-  const store = new MongoStore({ mongoose: mongoose }),
-
   whatsappClient = new Client({
-    authStrategy: new RemoteAuth({
+    authStrategy: new LocalAuth({
       clientId: "id25",
-      store: store,
-      backupSyncIntervalMs: 300000
+      dataPath: path.join(__dirname, "../sessions"),
     }),
     puppeteer: {
       headless: true,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage"
+        "--unhandled-rejections=strict"
       ],
       timeout: 60000
     }
@@ -113,13 +98,22 @@ async function initializeWhatsAppClient() {
 }
 
 // Rotas
+app.get("/health", (req: Request, res: any) => {
+  try {
+    return res.status(200).json({ status: 'success' });
+  } catch (error) {
+    return res.status(500).json({ status: 'error' });
+  }
+})
+
 app.use('/whatsapp', WhatsappRouter);
 app.use('/sale', SaleRouter);
 app.use('/parameter', ParameterRouter);
 
 // Inicia servidor
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  await initializeWhatsAppClient()
 });
 
 // Graceful shutdown
