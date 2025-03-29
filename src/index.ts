@@ -105,6 +105,13 @@ app.use('/whatsapp', WhatsappRouter);
 app.use('/sale', SaleRouter);
 app.use('/parameter', ParameterRouter);
 
+const angularPath = path.join(__dirname, '../browser')
+app.use(express.static(angularPath))
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(angularPath, 'index.html'));
+})
+
 // Inicia servidor
 server.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
