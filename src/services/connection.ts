@@ -17,7 +17,8 @@ class DatabaseConnection {
         queueLimit: 0,          // Limite de consultas na fila
         enableKeepAlive: true,  // Habilita Keep-Alive
         keepAliveInitialDelay: 0, // Delay inicial de Keep-Alive
-        dateStrings: true,      // Para retornar datas no formato de string
+        dateStrings: true,
+        charset: 'utf8mb4'
       });
     }
     return await this.pool.getConnection();

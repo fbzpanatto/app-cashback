@@ -16,3 +16,14 @@ export interface Parameter {
   cashback: number,
   expiration_day: number
 }
+
+export interface Message {
+  id: number,
+  text: string
+}
+
+export interface Action {
+  id: number,
+  day: number,
+  active: boolean,
+}

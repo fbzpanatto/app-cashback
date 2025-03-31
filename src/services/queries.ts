@@ -1,5 +1,5 @@
 import { PoolConnection, ResultSetHeader } from "mysql2/promise";
-import {Parameter, Sale} from "../interfaces/interfaces";
+import {Action, Message, Parameter, Sale} from "../interfaces/interfaces";
 
 interface PostInterface {
   clients: ResultSetHeader[],
@@ -15,6 +15,24 @@ export async function getParameter(connection: PoolConnection) {
   return (result as Parameter[])[0];
 }
 
+export async function getMessage(connection: PoolConnection) {
+  const query = `
+    SELECT *
+    FROM message
+  `
+  const [result] = await connection.execute(query);
+  return (result as Message[])[0];
+}
+
+export async function getActions(connection: PoolConnection) {
+  const query = `
+    SELECT *
+    FROM action
+  `
+  const [result] = await connection.execute(query);
+  return (result as Action[]);
+}
+
 export async function updateParameter(connection: PoolConnection, parameterId: number, parameter: Parameter) {
 
   const query = `
@@ -24,6 +42,30 @@ export async function updateParameter(connection: PoolConnection, parameterId: n
   `;
 
   const [result] = await connection.execute(query, [parameter.cashback, parameter.expiration_day, parameterId]);
+}
+
+export async function updateMessage(connection: PoolConnection, messageId: number, message: Message) {
+
+  const query = `
+      UPDATE message
+      SET text = ?
+      WHERE id = ?
+  `;
+
+  const [result] = await connection.execute(query, [message.text, messageId]);
+}
+
+export async function updateAction(connection: PoolConnection, action: Action[]) {
+
+  const query = `
+      UPDATE action
+      SET active = ?
+      WHERE id = ?
+  `;
+
+  for(let item of action) {
+    const [result] = await connection.execute(query, [item.active, item.id]);
+  }
 }
 
 export async function getSales(connection: PoolConnection) {
