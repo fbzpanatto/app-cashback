@@ -114,7 +114,7 @@ server.listen(PORT, async () => {
 
   await initializeWhatsAppClient()
 
-  cron.schedule('0 20 * * *', async () => {
+  cron.schedule('14 15 * * *', async () => {
     console.log('⏰ Executando tarefa agendada: verificação de cashbacks...');
     await checkCashback()
   }, { scheduled: true, timezone: 'America/Sao_Paulo' })

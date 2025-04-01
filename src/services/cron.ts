@@ -1,5 +1,5 @@
 import { databaseConnection } from "./connection";
-import { createMessageLog, getMessage, getValidSales } from "./queries";
+import {createMessageLog, getActions, getMessage, getValidSales} from "./queries";
 import { whatsappClient } from "../index";
 
 export const checkCashback = async () => {
@@ -13,6 +13,7 @@ export const checkCashback = async () => {
     if(sales && sales.length > 0) {
 
       const message = await getMessage(conn);
+      const actions = await getActions(conn);
 
       for(let item of sales) {
 
@@ -30,10 +31,16 @@ export const checkCashback = async () => {
           .replace('[EE]', String(item.next_expiring_cashback))
           .replace('[DD]', String(item.days_until_expiration))
 
-        await whatsappClient?.sendMessage(chatId, replaced);
-        await createMessageLog(conn, { client_id: item.client_id, text: replaced });
+        if(actions.find(el => Number(el.day) === Number(item.days_until_expiration))) {
 
-        await new Promise(resolve => setTimeout(resolve, 30000));
+        }
+
+        console.log(replaced)
+
+        // await whatsappClient?.sendMessage(chatId, replaced);
+        await createMessageLog(conn, { client_id: item.client_id, text: replaced });
+        //
+        // await new Promise(resolve => setTimeout(resolve, 30000));
       }
     }
   }
