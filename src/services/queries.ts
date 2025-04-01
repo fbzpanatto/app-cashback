@@ -1,5 +1,5 @@
 import { PoolConnection, ResultSetHeader } from "mysql2/promise";
-import {Action, Message, Parameter, Sale} from "../interfaces/interfaces";
+import { Action, Message, Parameter, Sale } from "../interfaces/interfaces";
 
 interface PostInterface {
   clients: ResultSetHeader[],
@@ -88,6 +88,39 @@ export async function getSales(connection: PoolConnection) {
 
   const [result] = await connection.execute(query);
   return result as Sale[];
+}
+
+export async function getValidSales(connection: PoolConnection) {
+  const query = `
+      SELECT
+        s.client_id, c.name, c.phone,
+        ROUND(SUM(s.sale_value * s.cashback), 2) AS total_cashback,
+        MIN(s.cashback_expiration) AS next_expiration_date,
+        ROUND((
+                  SELECT (s2.sale_value * s2.cashback)
+                  FROM sale s2
+                  WHERE s2.client_id = s.client_id
+                    AND s2.cashback_expiration = MIN(s.cashback_expiration)
+                  LIMIT 1
+              ), 2) AS next_expiring_cashback,
+        DATEDIFF(MIN(s.cashback_expiration), CURDATE()) AS days_until_expiration
+      FROM sale s
+      INNER JOIN client AS c ON s.client_id = c.id
+      WHERE s.cashback_expiration >= CURDATE()  -- Apenas cashbacks válidos
+      GROUP BY s.client_id
+      ORDER BY next_expiration_date;
+
+  `
+  const [result] = await connection.execute(query);
+  return result as { client_id: number, name: string, phone: string, total_cashback: number | string, next_expiration_date: string, next_expiring_cashback: number | string, days_until_expiration: number }[];
+}
+
+export async function createMessageLog(connection: PoolConnection, log: { client_id: number, text: string }) {
+  const query = `
+    INSERT INTO message_log (client_id, text) VALUES (?, ?)
+  `
+
+  await connection.execute(query, [log.client_id, log.text]);
 }
 
 export async function updateSale(connection: PoolConnection, saleId: number, withdrawnDate: Date | string) {

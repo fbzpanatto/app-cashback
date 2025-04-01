@@ -1,9 +1,3 @@
-import { WhatsappRouter } from "./controllers/whatsapp";
-import { SaleRouter } from "./controllers/sale";
-import { ParameterRouter } from "./controllers/parameter";
-import { ActionRouter } from "./controllers/action";
-import { MessageRouter } from "./controllers/message";
-
 require("dotenv").config();
 
 import { Client, LocalAuth } from 'whatsapp-web.js';
@@ -13,21 +7,26 @@ import cors from 'cors';
 import http from 'http';
 import mongoose from 'mongoose';
 import path from "node:path";
+import cron from 'node-cron';
+
+import { WhatsappRouter } from "./controllers/whatsapp";
+import { SaleRouter } from "./controllers/sale";
+import { ParameterRouter } from "./controllers/parameter";
+import { ActionRouter } from "./controllers/action";
+import { MessageRouter } from "./controllers/message";
+
+import { checkCashback } from "./services/cron";
 
 const PORT = 3000;
 
 const app: Application = express();
 const server = http.createServer(app);
 
-const corsOptions = {
-  origin: '*'
-}
+const corsOptions = { origin: '*' }
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Socket.IO
 const io = new Server(server, {
   cors: corsOptions,
   connectionStateRecovery: {
@@ -35,9 +34,7 @@ const io = new Server(server, {
   }
 });
 
-// WhatsApp Client
 export let whatsappClient: Client | null = null;
-
 async function initializeWhatsAppClient() {
 
   whatsappClient = new Client({
@@ -94,7 +91,6 @@ async function initializeWhatsAppClient() {
   }
 }
 
-// Rotas
 app.get("/health", (req: Request, res: any) => {
   try {
     return res.status(200).json({ status: 'success' });
@@ -102,33 +98,32 @@ app.get("/health", (req: Request, res: any) => {
     return res.status(500).json({ status: 'error' });
   }
 })
-
 app.use('/whatsapp', WhatsappRouter);
 app.use('/sale', SaleRouter);
 app.use('/parameter', ParameterRouter);
 app.use('/action', ActionRouter);
 app.use('/message', MessageRouter);
 
-const angularPath = path.join(__dirname, '../browser')
-app.use(express.static(angularPath))
+const angular = path.join(__dirname, '../browser')
+app.use(express.static(angular))
+app.get('*', (_, res) => { res.sendFile(path.join(angular, 'index.html')) })
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(angularPath, 'index.html'));
+server.listen(PORT, async () => {
+
+  console.log(`🚀 Servidor rodando na porta ${PORT}`)
+
+  await initializeWhatsAppClient()
+
+  cron.schedule('0 20 * * *', async () => {
+    console.log('⏰ Executando tarefa agendada: verificação de cashbacks...');
+    await checkCashback()
+  }, { scheduled: true, timezone: 'America/Sao_Paulo' })
 })
 
-// Inicia servidor
-server.listen(PORT, async () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  await initializeWhatsAppClient()
-});
-
-// Graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('🛑 Encerrando aplicação...');
-  if (whatsappClient) {
-    await whatsappClient.destroy();
-  }
+  console.log('🛑 Encerrando aplicação...')
+  if (whatsappClient) { await whatsappClient.destroy() }
   await mongoose.disconnect();
-  server.close();
-  process.exit(0);
-});
+  server.close()
+  process.exit(0)
+})

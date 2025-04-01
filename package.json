@@ -19,6 +19,7 @@
     "mongodb": "^6.15.0",
     "mongoose": "^8.13.0",
     "mysql2": "^3.14.0",
+    "node-cron": "^3.0.3",
     "socket.io": "^4.8.1",
     "whatsapp-web.js": "^1.26.0",
     "wwebjs-mongo": "^1.1.0"
@@ -27,6 +28,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/node": "^22.13.13",
+    "@types/node-cron": "^3.0.11",
     "@types/qrcode-terminal": "^0.12.2",
     "nodemon": "^3.1.9",
     "pm2": "^6.0.5",
