@@ -1,5 +1,5 @@
 import { databaseConnection } from "./connection";
-import {clientsTotalCashback, createMessageLog, getActions, getMessage, nextCashbackExpiration} from "./queries";
+import { clientsTotalCashback, createMessageLog, getMessage, nextCashbackExpiration } from "./queries";
 import { whatsappClient } from "../index";
 
 export const checkCashback = async () => {
@@ -8,36 +8,33 @@ export const checkCashback = async () => {
 
   try {
 
-    const sales = await clientsTotalCashback(conn);
+    const clients = await clientsTotalCashback(conn);
 
-    if(sales && sales.length > 0) {
+    if(clients && clients.length > 0) {
 
       const message = await getMessage(conn);
 
-      for(let item of sales) {
+      for(let client of clients) {
 
-        const nextExpirationCashback = await nextCashbackExpiration(conn, item.client_id)
+        const next = (await nextCashbackExpiration(conn, client.client_id))[0]
 
-        console.log(item)
-        console.log(nextExpirationCashback)
-
-        let phone = item.phone.replace(/\D/g, '')
+        let phone = client.phone.replace(/\D/g, '')
 
         if (phone.length < 10 || phone.length > 11) { continue }
 
-        if (!phone.startsWith('55')) { phone = `55${phone}` }
+        if (!phone.startsWith('55')) { phone = `55${ phone }` }
 
-        const chatId = `${phone}@c.us`;
+        const chatId = `${ phone }@c.us`;
 
-        // const replaced = message.text
-        //   .replace('[NN]', item.name)
-        //   .replace('[TT]', String(item.total_cashback))
-        //   .replace('[EE]', String(item.next_expiring_cashback))
-        //   .replace('[DD]', String(item.days_until_expiration))
+        const replaced = message.text
+          .replace('[NN]', client.name)
+          .replace('[TT]', String(client.total_cashback))
+          .replace('[EE]', String(next.total_cashback))
+          .replace('[DD]', String(next.days_until_expiration))
 
-        // await whatsappClient?.sendMessage(chatId, replaced);
-        // await createMessageLog(conn, { client_id: item.client_id, text: replaced });
-        // await new Promise(resolve => setTimeout(resolve, 30000));
+        await whatsappClient?.sendMessage(chatId, replaced);
+        await createMessageLog(conn, { client_id: client.client_id, text: replaced });
+        await new Promise(resolve => setTimeout(resolve, 30000));
       }
     }
   }
