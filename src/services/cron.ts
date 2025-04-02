@@ -26,15 +26,17 @@ export const checkCashback = async () => {
 
         const chatId = `${ phone }@c.us`;
 
-        const replaced = message.text
-          .replace('[NN]', client.name)
-          .replace('[TT]', String(client.total_cashback))
-          .replace('[EE]', String(next.total_cashback))
-          .replace('[DD]', String(next.days_until_expiration))
+        if(next) {
+          const replaced = message.text
+            .replace('[NN]', client.name)
+            .replace('[TT]', String(client.total_cashback))
+            .replace('[EE]', String(next.total_cashback))
+            .replace('[DD]', String(next.days_until_expiration))
 
-        await whatsappClient?.sendMessage(chatId, replaced);
-        await createMessageLog(conn, { client_id: client.client_id, text: replaced });
-        await new Promise(resolve => setTimeout(resolve, 30000));
+          await whatsappClient?.sendMessage(chatId, replaced);
+          await createMessageLog(conn, { client_id: client.client_id, text: replaced });
+          await new Promise(resolve => setTimeout(resolve, 30000));
+        }
       }
     }
   }
