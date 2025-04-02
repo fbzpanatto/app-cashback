@@ -113,12 +113,11 @@ server.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`)
 
   await initializeWhatsAppClient()
-  await checkCashback()
 
-  // cron.schedule('06 11 * * *', async () => {
-  //   console.log('⏰ Executando tarefa agendada: verificação de cashbacks...');
-  //   await checkCashback()
-  // }, { scheduled: true, timezone: 'America/Sao_Paulo' })
+  cron.schedule('0 20 * * *', async () => {
+    console.log('⏰ Executando tarefa agendada: verificação de cashbacks...');
+    await checkCashback()
+  }, { scheduled: true, timezone: 'America/Sao_Paulo' })
 })
 
 process.on('SIGINT', async () => {
