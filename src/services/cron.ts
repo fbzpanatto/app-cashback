@@ -1,5 +1,5 @@
 import { databaseConnection } from "./connection";
-import {createMessageLog, getActions, getMessage, getValidSales} from "./queries";
+import {clientsTotalCashback, createMessageLog, getActions, getMessage, nextCashbackExpiration} from "./queries";
 import { whatsappClient } from "../index";
 
 export const checkCashback = async () => {
@@ -8,14 +8,18 @@ export const checkCashback = async () => {
 
   try {
 
-    const sales = await getValidSales(conn);
+    const sales = await clientsTotalCashback(conn);
 
     if(sales && sales.length > 0) {
 
       const message = await getMessage(conn);
-      const actions = await getActions(conn);
 
       for(let item of sales) {
+
+        const nextExpirationCashback = await nextCashbackExpiration(conn, item.client_id)
+
+        console.log(item)
+        console.log(nextExpirationCashback)
 
         let phone = item.phone.replace(/\D/g, '')
 
@@ -25,21 +29,14 @@ export const checkCashback = async () => {
 
         const chatId = `${phone}@c.us`;
 
-        const replaced = message.text
-          .replace('[NN]', item.name)
-          .replace('[TT]', String(item.total_cashback))
-          .replace('[EE]', String(item.next_expiring_cashback))
-          .replace('[DD]', String(item.days_until_expiration))
-
-        if(actions.find(el => Number(el.day) === Number(item.days_until_expiration))) {
-
-        }
-
-        console.log(replaced)
+        // const replaced = message.text
+        //   .replace('[NN]', item.name)
+        //   .replace('[TT]', String(item.total_cashback))
+        //   .replace('[EE]', String(item.next_expiring_cashback))
+        //   .replace('[DD]', String(item.days_until_expiration))
 
         // await whatsappClient?.sendMessage(chatId, replaced);
-        await createMessageLog(conn, { client_id: item.client_id, text: replaced });
-        //
+        // await createMessageLog(conn, { client_id: item.client_id, text: replaced });
         // await new Promise(resolve => setTimeout(resolve, 30000));
       }
     }

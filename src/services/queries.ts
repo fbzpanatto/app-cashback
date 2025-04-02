@@ -100,32 +100,69 @@ export async function getSales(connection: PoolConnection) {
   return result as Sale[];
 }
 
-export async function getValidSales(connection: PoolConnection) {
+export async function clientsTotalCashback(connection: PoolConnection) {
   const query = `
-      SELECT
-          s.client_id,
-          c.name,
-          c.phone,
-          ROUND(SUM(s.sale_value * s.cashback), 2) AS total_cashback,
-          MIN(s.cashback_expiration) AS next_expiration_date,
-          ROUND(next_expiring.sale_value * next_expiring.cashback, 2) AS next_expiring_cashback,
-          DATEDIFF(MIN(s.cashback_expiration), CURDATE()) AS days_until_expiration
-      FROM sale s
-               INNER JOIN client AS c ON s.client_id = c.id
-               INNER JOIN sale next_expiring
-                          ON s.client_id = next_expiring.client_id
-                              AND next_expiring.cashback_expiration = (
-                                  SELECT MIN(s2.cashback_expiration)
-                                  FROM sale s2
-                                  WHERE s2.client_id = s.client_id
-                                    AND s2.cashback_expiration >= CURDATE()
-                              )
-      WHERE s.cashback_expiration >= CURDATE()  -- Apenas cashbacks válidos
-      GROUP BY s.client_id, next_expiring.sale_value, next_expiring.cashback
-      ORDER BY next_expiration_date;
+    SELECT
+      s.client_id,
+      c.name,
+      c.phone,
+      ROUND(SUM(s.sale_value * s.cashback), 2) AS total_cashback
+    FROM sale s
+    INNER JOIN client AS c ON s.client_id = c.id
+    WHERE s.cashback_expiration >= CURDATE() AND s.withdrawn_date IS NULL
+    GROUP BY s.client_id
   `
+
   const [result] = await connection.execute(query);
-  return result as { client_id: number, name: string, phone: string, total_cashback: number | string, next_expiration_date: string, next_expiring_cashback: number | string, days_until_expiration: number }[];
+  return result as { client_id: number, name: string, phone: string, total_cashback: number | string }[];
+}
+
+export async function nextCashbackExpiration(connection: PoolConnection, clientId: number){
+
+  const query = `
+      WITH CashbackData AS (
+          SELECT
+              s.client_id,
+              c.name,
+              c.phone,
+              s.sale_value,
+              s.cashback,
+              s.cashback_expiration,
+              ROUND((s.sale_value * s.cashback), 2) AS total_cashback,
+              DATEDIFF(s.cashback_expiration, CURDATE()) AS days_until_expiration
+          FROM sale AS s
+                   INNER JOIN client AS c ON s.client_id = c.id
+          WHERE
+              s.cashback_expiration >= CURDATE()
+            AND s.withdrawn_date IS NULL
+      )
+      SELECT
+          cd.client_id,
+          cd.name,
+          cd.phone,
+          cd.sale_value,
+          cd.cashback,
+          cd.cashback_expiration,
+          cd.total_cashback,
+          cd.days_until_expiration
+      FROM CashbackData cd
+               INNER JOIN (
+          -- Seleciona a menor data de expiração por cliente
+          SELECT client_id, MIN(cashback_expiration) AS min_expiration
+          FROM CashbackData
+          GROUP BY client_id
+      ) min_dates
+                          ON cd.client_id = min_dates.client_id
+                              AND cd.cashback_expiration = min_dates.min_expiration
+      WHERE cd.days_until_expiration IN (
+          SELECT a.day FROM action AS a WHERE a.active = 1
+      )
+        AND cd.client_id = ?;
+  `
+  const [result] = await connection.execute(query, [clientId]);
+
+  return result as { client_id: number, name: string, phone: string, sale_value: number, cashback: number, cashback_expiration: number, total_cashback: number, days_until_expiration: number  }[];
+
 }
 
 export async function createMessageLog(connection: PoolConnection, log: { client_id: number, text: string }) {
