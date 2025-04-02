@@ -120,48 +120,25 @@ export async function clientsTotalCashback(connection: PoolConnection) {
 export async function nextCashbackExpiration(connection: PoolConnection, clientId: number){
 
   const query = `
-      WITH CashbackData AS (
-          SELECT
-              s.client_id,
-              c.name,
-              c.phone,
-              s.sale_value,
-              s.cashback,
-              s.cashback_expiration,
-              ROUND((s.sale_value * s.cashback), 2) AS total_cashback,
-              DATEDIFF(s.cashback_expiration, CURDATE()) AS days_until_expiration
-          FROM sale AS s
-                   INNER JOIN client AS c ON s.client_id = c.id
-          WHERE
-              s.cashback_expiration >= CURDATE()
-            AND s.withdrawn_date IS NULL
-      )
-      SELECT
-          cd.client_id,
-          cd.name,
-          cd.phone,
-          cd.sale_value,
-          cd.cashback,
-          cd.cashback_expiration,
-          cd.total_cashback,
-          cd.days_until_expiration
-      FROM CashbackData cd
-               INNER JOIN (
-          -- Seleciona a menor data de expiração por cliente
-          SELECT client_id, MIN(cashback_expiration) AS min_expiration
-          FROM CashbackData
-          GROUP BY client_id
-      ) min_dates
-                          ON cd.client_id = min_dates.client_id
-                              AND cd.cashback_expiration = min_dates.min_expiration
-      WHERE cd.days_until_expiration IN (
-          SELECT a.day FROM action AS a WHERE a.active = 1
-      )
-        AND cd.client_id = ?;
+    SELECT 
+      s.client_id,
+      c.name,
+      c.phone,
+      s.cashback_expiration,
+      ROUND((s.sale_value * s.cashback), 2) AS total_cashback,
+      DATEDIFF(s.cashback_expiration, CURDATE()) AS days_until_expiration
+    FROM sale AS s
+    INNER JOIN client AS c ON s.client_id = c.id
+    WHERE s.cashback_expiration >= CURDATE()
+      AND s.withdrawn_date IS NULL
+      AND s.client_id = ?
+      AND (DATEDIFF(s.cashback_expiration, CURDATE())) IN (SELECT a.day FROM action AS a WHERE a.active = 1)
+    order by s.cashback_expiration
+    LIMIT 1
   `
   const [result] = await connection.execute(query, [clientId]);
 
-  return result as { client_id: number, name: string, phone: string, sale_value: number, cashback: number, cashback_expiration: number, total_cashback: number, days_until_expiration: number  }[];
+  return result as { client_id: number, name: string, phone: string, cashback_expiration: number, total_cashback: number, days_until_expiration: number  }[];
 
 }
 
