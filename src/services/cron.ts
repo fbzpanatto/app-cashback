@@ -10,9 +10,12 @@ export const checkCashback = async () => {
 
     const closeToExpiration = await nextCashbackExpiration(conn)
 
-    console.log("closeToExpiration", closeToExpiration)
-
     if (closeToExpiration.length > 0) {
+
+      if (!whatsappClient?.info?.wid) {
+        console.log('❌ WhatsApp não está conectado');
+        return;
+      }
 
       const message = await getMessage(conn);
 
@@ -34,10 +37,18 @@ export const checkCashback = async () => {
           .replace('[EE]', String(client.next_cashback))
           .replace('[DD]', String(client.days_until_expiration))
 
-        console.log('Mensagem: ', replaced)
+        const isRegistered = await whatsappClient?.isRegisteredUser(chatId);
 
-        await createMessageLog(conn, { client_id: client.client_id, text: replaced });
-        await whatsappClient?.sendMessage(chatId, replaced);
+        if (isRegistered) {
+
+          console.log('Registered: ', isRegistered);
+          console.log(`📞 Disparando para ${ chatId }`);
+          console.log('📨 Mensagem:', replaced);
+
+          await createMessageLog(conn, { client_id: client.client_id, text: replaced });
+          await whatsappClient?.sendMessage(chatId, replaced);
+          await new Promise(resolve => setTimeout(resolve, 3000))
+        } else { console.log(`⚠️ Número ${chatId} não é um usuário registrado`) }
       }
     }
   }
