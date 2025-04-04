@@ -1,5 +1,5 @@
 import { PoolConnection, ResultSetHeader } from "mysql2/promise";
-import { Action, Message, Parameter, Sale } from "../interfaces/interfaces";
+import {Action, Message, Parameter, Sale, User} from "../interfaces/interfaces";
 
 interface PostInterface {
   clients: ResultSetHeader[],
@@ -100,7 +100,30 @@ export async function getSales(connection: PoolConnection) {
   return result as Sale[];
 }
 
-export async function clientsTotalCashback(connection: PoolConnection) {
+export async function getSalesByClientId(connection: PoolConnection, clientId: number) {
+  const query = `
+    SELECT 
+      s.id,
+      s.client_id AS clientId,
+      c.name AS clientName,
+      c.phone AS clientPhone,
+      s.sale_id AS saleId,
+      s.sale_value AS saleValue,
+      s.cashback AS cashback,
+      DATE_FORMAT(s.sale_date, '%d/%m/%Y') AS saleDate,
+      DATE_FORMAT(s.cashback_expiration, '%d/%m/%Y') AS cashbackExpiration,
+      DATE_FORMAT(s.withdrawn_date, '%d/%m/%Y') AS withdrawnDate
+    FROM sale AS s
+    INNER JOIN client AS c ON s.client_id = c.id
+    WHERE s.client_id = ?
+    ORDER BY s.sale_date DESC
+  `;
+
+  const [result] = await connection.execute(query, [clientId]);
+  return result as Sale[];
+}
+
+export async function clientsTotalCashback(connection: PoolConnection, clientId: number) {
   const query = `
     SELECT
       s.client_id,
@@ -109,37 +132,33 @@ export async function clientsTotalCashback(connection: PoolConnection) {
       ROUND(SUM(s.sale_value * s.cashback), 2) AS total_cashback
     FROM sale s
     INNER JOIN client AS c ON s.client_id = c.id
-    WHERE s.cashback_expiration >= CURDATE() AND s.withdrawn_date IS NULL
+    WHERE s.cashback_expiration >= CURDATE() AND s.withdrawn_date IS NULL AND s.client_id = ?
     GROUP BY s.client_id
   `
 
-  const [result] = await connection.execute(query);
-  return result as { client_id: number, name: string, phone: string, total_cashback: number | string }[];
+  const [result] = await connection.execute(query, [clientId]);
+  return (result as { client_id: number, name: string, phone: string, total_cashback: number | string }[])[0];
 }
 
-export async function nextCashbackExpiration(connection: PoolConnection, clientId: number){
+export async function nextCashbackExpiration(connection: PoolConnection) {
 
   const query = `
-    SELECT 
-      s.client_id,
-      c.name,
-      c.phone,
-      s.cashback_expiration,
-      ROUND((s.sale_value * s.cashback), 2) AS total_cashback,
-      DATEDIFF(s.cashback_expiration, CURDATE()) AS days_until_expiration
-    FROM sale AS s
-    INNER JOIN client AS c ON s.client_id = c.id
-    WHERE s.cashback_expiration >= CURDATE()
-      AND s.withdrawn_date IS NULL
-      AND s.client_id = ?
-      AND (DATEDIFF(s.cashback_expiration, CURDATE())) IN (SELECT a.day FROM action AS a WHERE a.active = 1)
-    order by s.cashback_expiration
-    LIMIT 1
+      SELECT s.client_id,
+             c.name,
+             c.phone,
+             s.cashback_expiration,
+             ROUND((s.sale_value * s.cashback), 2)      AS next_cashback,
+             DATEDIFF(s.cashback_expiration, CURDATE()) AS days_until_expiration
+      FROM sale AS s
+               INNER JOIN client AS c ON s.client_id = c.id
+      WHERE s.cashback_expiration >= CURDATE()
+        AND s.withdrawn_date IS NULL
+        AND DATEDIFF(s.cashback_expiration, CURDATE()) IN (SELECT a.day FROM action AS a WHERE a.active = 1)
+      order by s.cashback_expiration;
   `
-  const [result] = await connection.execute(query, [clientId]);
+  const [result] = await connection.execute(query);
 
-  return result as { client_id: number, name: string, phone: string, cashback_expiration: number, total_cashback: number, days_until_expiration: number  }[];
-
+  return result as { client_id: number, name: string, phone: string, cashback_expiration: number, next_cashback: number, days_until_expiration: number  }[];
 }
 
 export async function createMessageLog(connection: PoolConnection, log: { client_id: number, text: string }) {
@@ -157,6 +176,15 @@ export async function updateSale(connection: PoolConnection, saleId: number, wit
   `
 
   const [result] = await connection.execute(query, [withdrawnDate, saleId]);
+}
+
+export async function deleteSale(connection: PoolConnection, saleId: number) {
+
+  const query = `
+    DELETE FROM sale WHERE sale.sale_id = ?
+  `
+
+  const [result] = await connection.execute(query, [saleId]);
 }
 
 export async function importClientSales(connection: PoolConnection, data: Sale[]) {
@@ -206,4 +234,14 @@ async function importSales(connection: PoolConnection, data: Sale[]) {
   }
 
   return results as ResultSetHeader[];
+}
+
+export async function getUserByEmail(connection: PoolConnection, email: string) {
+
+  const query = `
+    SELECT * FROM user WHERE user.email = ?;
+  `
+  const [result] = await connection.execute(query, [email]);
+
+  return (result as User[])[0];
 }

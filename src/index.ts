@@ -14,6 +14,7 @@ import { SaleRouter } from "./controllers/sale";
 import { ParameterRouter } from "./controllers/parameter";
 import { ActionRouter } from "./controllers/action";
 import { MessageRouter } from "./controllers/message";
+import { LoginRouter } from "./controllers/login";
 
 import { checkCashback } from "./services/cron";
 
@@ -62,6 +63,11 @@ async function initializeWhatsAppClient() {
   whatsappClient.on('ready', () => {
     console.log('✅ WhatsApp pronto');
     io.emit('ready', { status: 'ready' });
+
+    cron.schedule('0 10 * * *', async () => {
+      console.log('⏰ Executando tarefa agendada: verificação de cashbacks...');
+      await checkCashback()
+    }, { scheduled: true, timezone: 'America/Sao_Paulo' })
   });
 
   whatsappClient.on('authenticated', () => {
@@ -103,6 +109,7 @@ app.use('/sale', SaleRouter);
 app.use('/parameter', ParameterRouter);
 app.use('/action', ActionRouter);
 app.use('/message', MessageRouter);
+app.use('/login', LoginRouter);
 
 const angular = path.join(__dirname, '../browser')
 app.use(express.static(angular))
@@ -113,11 +120,6 @@ server.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`)
 
   await initializeWhatsAppClient()
-
-  cron.schedule('0 20 * * *', async () => {
-    console.log('⏰ Executando tarefa agendada: verificação de cashbacks...');
-    await checkCashback()
-  }, { scheduled: true, timezone: 'America/Sao_Paulo' })
 })
 
 process.on('SIGINT', async () => {

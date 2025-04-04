@@ -8,15 +8,13 @@ export const checkCashback = async () => {
 
   try {
 
-    const clients = await clientsTotalCashback(conn);
+    const closeToExpiration = await nextCashbackExpiration(conn)
 
-    if(clients && clients.length > 0) {
+    if (closeToExpiration.length > 0) {
 
       const message = await getMessage(conn);
 
-      for(let client of clients) {
-
-        const next = (await nextCashbackExpiration(conn, client.client_id))[0]
+      for(let client of closeToExpiration) {
 
         let phone = client.phone.replace(/\D/g, '')
 
@@ -26,17 +24,16 @@ export const checkCashback = async () => {
 
         const chatId = `${ phone }@c.us`;
 
-        if(next) {
-          const replaced = message.text
-            .replace('[NN]', client.name)
-            .replace('[TT]', String(client.total_cashback))
-            .replace('[EE]', String(next.total_cashback))
-            .replace('[DD]', String(next.days_until_expiration))
+        const clientTotal = await clientsTotalCashback(conn, client.client_id);
 
-          await whatsappClient?.sendMessage(chatId, replaced);
-          await createMessageLog(conn, { client_id: client.client_id, text: replaced });
-          await new Promise(resolve => setTimeout(resolve, 30000));
-        }
+        const replaced = message.text
+          .replace('[NN]', client.name)
+          .replace('[TT]', String(clientTotal.total_cashback))
+          .replace('[EE]', String(client.next_cashback))
+          .replace('[DD]', String(client.days_until_expiration))
+
+        await whatsappClient?.sendMessage(chatId, replaced);
+        await createMessageLog(conn, { client_id: client.client_id, text: replaced });
       }
     }
   }

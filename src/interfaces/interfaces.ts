@@ -27,3 +27,12 @@ export interface Action {
   day: number,
   active: boolean,
 }
+
+export interface User {
+  id: number,
+  email: string,
+  password: string,
+  admin: boolean,
+  createdAt: Date | string,
+  updatedAt: Date | string,
+}
