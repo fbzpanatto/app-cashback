@@ -18,7 +18,8 @@ class DatabaseConnection {
         enableKeepAlive: true,  // Habilita Keep-Alive
         keepAliveInitialDelay: 0, // Delay inicial de Keep-Alive
         dateStrings: true,
-        charset: 'utf8mb4'
+        charset: 'utf8mb4',
+        timezone: '-03:00'
       });
     }
     return await this.pool.getConnection();
