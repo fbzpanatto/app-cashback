@@ -32,8 +32,10 @@ export const checkCashback = async () => {
           .replace('[EE]', String(client.next_cashback))
           .replace('[DD]', String(client.days_until_expiration))
 
-        await whatsappClient?.sendMessage(chatId, replaced);
+        console.log(replaced)
+
         await createMessageLog(conn, { client_id: client.client_id, text: replaced });
+        await whatsappClient?.sendMessage(chatId, replaced);
       }
     }
   }
