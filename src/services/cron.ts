@@ -47,7 +47,7 @@ export const checkCashback = async () => {
 
           await createMessageLog(conn, { client_id: client.client_id, text: replaced });
           await whatsappClient?.sendMessage(chatId, replaced);
-          await new Promise(resolve => setTimeout(resolve, 3000))
+          await new Promise(resolve => setTimeout(resolve, 30000));
         } else { console.log(`⚠️ Número ${chatId} não é um usuário registrado`) }
       }
     }
