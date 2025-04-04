@@ -143,12 +143,12 @@ export async function nextCashbackExpiration(connection: PoolConnection) {
              c.phone,
              s.cashback_expiration,
              ROUND((s.sale_value * s.cashback), 2)      AS next_cashback,
-             DATEDIFF(s.cashback_expiration, CURDATE()) AS days_until_expiration
+             DATEDIFF(s.cashback_expiration, CURDATE()) + 1 AS days_until_expiration
       FROM sale AS s
                INNER JOIN client AS c ON s.client_id = c.id
       WHERE s.cashback_expiration >= CURDATE()
         AND s.withdrawn_date IS NULL
-        AND DATEDIFF(s.cashback_expiration, CURDATE()) IN (SELECT a.day FROM action AS a WHERE a.active = 1)
+        AND DATEDIFF(s.cashback_expiration, CURDATE()) + 1 IN (SELECT a.day FROM action AS a WHERE a.active = 1)
       order by s.cashback_expiration;
   `
   const [result] = await connection.execute(query);
