@@ -125,19 +125,14 @@ export async function getSalesByClientId(connection: PoolConnection, clientId: n
 
 export async function clientsTotalCashback(connection: PoolConnection, clientId: number) {
   const query = `
-    SELECT
-      s.client_id,
-      c.name,
-      c.phone,
-      ROUND(SUM(s.sale_value * s.cashback), 2) AS total_cashback
-    FROM sale s
-    INNER JOIN client AS c ON s.client_id = c.id
-    WHERE s.cashback_expiration >= CURDATE() AND s.withdrawn_date IS NULL AND s.client_id = ?
-    GROUP BY s.client_id
+      SELECT ROUND(SUM(s.sale_value * s.cashback), 2) AS amount
+      FROM sale s
+               INNER JOIN client AS c ON s.client_id = c.id
+      WHERE s.cashback_expiration >= CURDATE() AND s.withdrawn_date IS NULL AND s.client_id = ?
   `
 
   const [result] = await connection.execute(query, [clientId]);
-  return (result as { client_id: number, name: string, phone: string, total_cashback: number | string }[])[0];
+  return (result as { amount: number }[])[0];
 }
 
 export async function nextCashbackExpiration(connection: PoolConnection) {

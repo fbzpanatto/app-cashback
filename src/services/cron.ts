@@ -10,6 +10,8 @@ export const checkCashback = async () => {
 
     const closeToExpiration = await nextCashbackExpiration(conn)
 
+    console.log("closeToExpiration", closeToExpiration)
+
     if (closeToExpiration.length > 0) {
 
       const message = await getMessage(conn);
@@ -24,15 +26,15 @@ export const checkCashback = async () => {
 
         const chatId = `${ phone }@c.us`;
 
-        const clientTotal = await clientsTotalCashback(conn, client.client_id);
+        const el = await clientsTotalCashback(conn, client.client_id);
 
         const replaced = message.text
           .replace('[NN]', client.name)
-          .replace('[TT]', String(clientTotal.total_cashback))
+          .replace('[TT]', String(el.amount))
           .replace('[EE]', String(client.next_cashback))
           .replace('[DD]', String(client.days_until_expiration))
 
-        console.log(replaced)
+        console.log('Mensagem: ', replaced)
 
         await createMessageLog(conn, { client_id: client.client_id, text: replaced });
         await whatsappClient?.sendMessage(chatId, replaced);
