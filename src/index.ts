@@ -18,10 +18,10 @@ import { LoginRouter } from "./controllers/login";
 
 import { checkCashback } from "./services/cron";
 
-console.log('🕐 Data/Hora local do Node:', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
-cron.schedule('* * * * *', () => {
-  console.log('⏰ Cron executado em:', new Date().toISOString());
-}, { timezone: 'America/Sao_Paulo' });
+// console.log('🕐 Data/Hora local do Node:', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
+// cron.schedule('* * * * *', () => {
+//   console.log('⏰ Cron executado em:', new Date().toISOString());
+// }, { timezone: 'America/Sao_Paulo' });
 
 const PORT = 3000;
 
