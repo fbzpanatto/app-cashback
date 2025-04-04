@@ -7,6 +7,11 @@ interface PostInterface {
 }
 
 export async function getParameter(connection: PoolConnection) {
+
+  const [datetime] = await connection.execute("SELECT NOW() AS now");
+
+  console.log('Datetime: ', datetime);
+
   const query = `
     SELECT p.id, p.cashback, p.expiration_day 
     FROM parameter AS p
