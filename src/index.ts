@@ -120,8 +120,6 @@ server.listen(PORT, async () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`)
 
   await initializeWhatsAppClient()
-
-  await checkCashback()
 })
 
 process.on('SIGINT', async () => {
